@@ -1,0 +1,398 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap");
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+		
+		body {
+			font-family: 'Noto Sans SC', sans-serif;
+			background: #f5f5f5;
+			overflow: hidden;
+			touch-action: none;
+		}
+		
+		#canvas { display: block; background: #fafafa; }
+		
+		.page {
+			position: absolute;
+			inset: 0;
+			display: none;
+			pointer-events: auto;
+		}
+		
+		.page.active {
+			display: flex;
+		}
+		
+		.flat-box {
+			background: #ffffff;
+			border: clamp(2px, 0.5vw, 3px) solid #000000;
+			box-shadow: clamp(4px, 1vw, 6px) clamp(4px, 1vw, 6px) 0px #000000;
+		}
+		
+		.flat-btn {
+			background: #fff;
+			border: clamp(2px, 0.5vw, 3px) solid #000;
+			box-shadow: clamp(2px, 0.8vw, 4px) clamp(2px, 0.8vw, 4px) 0 #000;
+			transition: all 0.1s;
+			cursor: pointer;
+			font-weight: 700;
+			touch-action: manipulation;
+		}
+		
+		.flat-btn:hover {
+			transform: translate(2px, 2px);
+			box-shadow: clamp(1px, 0.4vw, 2px) clamp(1px, 0.4vw, 2px) 0 #000;
+		}
+		
+		.flat-btn:active {
+			transform: translate(clamp(2px, 0.8vw, 4px), clamp(2px, 0.8vw, 4px));
+			box-shadow: 0 0 0 #000;
+		}
+		
+		.flat-btn.red { background: #ff6b6b; color: white; }
+		.flat-btn.blue { background: #4ecdc4; color: white; }
+		.flat-btn.yellow { background: #ffe66d; color: #000; }
+		.flat-btn.gray { background: #e0e0e0; color: #000; }
+		
+		.flat-slider {
+			-webkit-appearance: none;
+			appearance: none;
+			background: #ddd;
+			height: clamp(8px, 2vw, 12px);
+			border: clamp(1px, 0.3vw, 2px) solid #000;
+			width: 100%;
+		}
+		
+		.flat-slider::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			width: clamp(20px, 5vw, 24px);
+			height: clamp(20px, 5vw, 24px);
+			background: #ff6b6b;
+			border: clamp(1px, 0.3vw, 2px) solid #000;
+			cursor: pointer;
+			box-shadow: clamp(1px, 0.5vw, 2px) clamp(1px, 0.5vw, 2px) 0 #000;
+		}
+		
+		.flat-toggle {
+			appearance: none;
+			width: 48px;
+			height: 24px;
+			background: #ddd;
+			border: 2px solid #000;
+			position: relative;
+			cursor: pointer;
+			transition: background 0.2s;
+		}
+		
+		.flat-toggle:checked {
+			background: #4ecdc4;
+		}
+		
+		.flat-toggle::after {
+			content: '';
+			position: absolute;
+			width: 16px;
+			height: 16px;
+			background: #fff;
+			border: 2px solid #000;
+			top: 2px;
+			left: 2px;
+			transition: transform 0.2s;
+		}
+		
+		.flat-toggle:checked::after {
+			transform: translateX(24px);
+		}
+		
+		.hidden { display: none !important; }
+		#fileInput { display: none; }
+		
+		.settings-scroll::-webkit-scrollbar {
+			width: 8px;
+		}
+		.settings-scroll::-webkit-scrollbar-track {
+			background: #f1f1f1;
+			border: 2px solid #000;
+		}
+		.settings-scroll::-webkit-scrollbar-thumb {
+			background: #4ecdc4;
+			border: 2px solid #000;
+		}
+		
+		@media (max-width: 768px) {
+			.flat-box { padding: clamp(8px, 3vw, 16px) !important; }
+			.text-xl { font-size: clamp(1rem, 5vw, 1.25rem) !important; }
+			.text-2xl { font-size: clamp(1.25rem, 6vw, 1.5rem) !important; }
+			.text-lg { font-size: clamp(0.875rem, 4vw, 1.125rem) !important; }
+		}
+
+		.song-list-item {
+			background: #ffffff;
+			border: clamp(2px, 0.5vw, 3px) solid #000000;
+			box-shadow: clamp(3px, 0.8vw, 4px) clamp(3px, 0.8vw, 4px) 0px #000000;
+			margin-bottom: clamp(8px, 2vw, 12px);
+			padding: clamp(10px, 3vw, 16px);
+			transition: all 0.15s;
+			cursor: pointer;
+		}
+		
+		.song-list-item:hover {
+			transform: translate(2px, 2px);
+			box-shadow: clamp(1px, 0.4vw, 2px) clamp(1px, 0.4vw, 2px) 0 #000;
+		}
+		
+		.song-list-item.active {
+			background: #e6f7ff;
+			border-color: #4ecdc4;
+		}
+		
+		.song-list-scroll {
+			max-height: 60vh;
+			overflow-y: auto;
+		}
+		
+		.song-list-scroll::-webkit-scrollbar {
+			width: 8px;
+		}
+		.song-list-scroll::-webkit-scrollbar-track {
+			background: #f1f1f1;
+			border: 2px solid #000;
+		}
+		.song-list-scroll::-webkit-scrollbar-thumb {
+			background: #4ecdc4;
+			border: 2px solid #000;
+		}
+		
+		.song-name-input {
+			border: 2px solid #000;
+			padding: 4px 8px;
+			font-family: inherit;
+			font-size: 14px;
+			width: 100%;
+			background: #fff;
+		}
+		
+		.song-name-input:focus {
+			outline: none;
+			background: #f0f8ff;
+		}
+		
+		.song-stats {
+			display: flex;
+			gap: clamp(8px, 2vw, 16px);
+			flex-wrap: wrap;
+			margin-top: 4px;
+		}
+		
+		.song-stat {
+			font-size: clamp(10px, 3vw, 12px);
+			color: #666;
+			background: #f5f5f5;
+			padding: 2px 6px;
+			border: 1px solid #000;
+		}
+		
+		.song-actions {
+			display: flex;
+			gap: 8px;
+			margin-top: 8px;
+		}
+		
+		.song-action-btn {
+			padding: 4px 8px;
+			font-size: 12px;
+			border: 2px solid #000;
+			cursor: pointer;
+			font-weight: bold;
+			transition: all 0.1s;
+		}
+		
+		.song-action-btn:hover {
+			transform: translate(1px, 1px);
+		}
+		
+		.song-action-btn.delete { background: #ff6b6b; color: white; }
+		.song-action-btn.rename { background: #ffe66d; color: #000; }
+		.song-action-btn.play { background: #4ecdc4; color: white; }
+		
+		.empty-state {
+			text-align: center;
+			padding: 40px 20px;
+			color: #999;
+		}
+		
+		.empty-state-icon {
+			font-size: 48px;
+			margin-bottom: 16px;
+		}
+
+		.page-transition {
+			animation: fadeIn 0.3s ease-out;
+		}
+		
+		@keyframes fadeIn {
+			from { opacity: 0; transform: scale(0.98); }
+			to { opacity: 1; transform: scale(1); }
+		}
+
+		.game-overlay {
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+		}
+		
+		.game-overlay > * {
+			pointer-events: auto;
+		}
+
+		.info-grid {
+			display: grid;
+			grid-template-columns: auto 1fr;
+			gap: 8px 16px;
+			align-items: baseline;
+		}
+		
+		.info-label {
+			font-weight: bold;
+			color: #666;
+			font-size: 12px;
+			text-transform: uppercase;
+		}
+		
+		.info-value {
+			font-size: 14px;
+			color: #000;
+		}
+		
+		.version-badge {
+			display: inline-block;
+			background: #4ecdc4;
+			color: white;
+			padding: 2px 8px;
+			border: 2px solid #000;
+			font-weight: bold;
+			font-size: 12px;
+			box-shadow: 2px 2px 0 #000;
+		}
+		
+		.version-badge.alpha { background: #ff6b6b; }
+		.version-badge.beta { background: #ffe66d; color: #000; }
+		
+		.update-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			background: #ffe66d;
+			padding: 2px 8px;
+			border: 2px solid #000;
+			font-size: 12px;
+			font-weight: bold;
+		}
+		
+		.changelog-list {
+			max-height: 200px;
+			overflow-y: auto;
+			font-size: 13px;
+			line-height: 1.6;
+		}
+		
+		.changelog-item {
+			padding: 8px;
+			margin-bottom: 8px;
+			background: #f9f9f9;
+			border: 1px solid #000;
+			border-left: 4px solid #4ecdc4;
+		}
+		
+		.changelog-version {
+			font-weight: bold;
+			color: #4ecdc4;
+			font-size: 12px;
+		}
+		
+		.changelog-date {
+			color: #999;
+			font-size: 11px;
+		}
+		
+		.tech-stack-tag {
+			display: inline-block;
+			background: #e0e0e0;
+			padding: 2px 8px;
+			margin: 2px;
+			border: 2px solid #000;
+			font-size: 11px;
+			font-weight: bold;
+		}
+
+		.modal-overlay {
+			position: fixed;
+			inset: 0;
+			background: rgba(0,0,0,0.5);
+			display: none;
+			align-items: center;
+			justify-content: center;
+			z-index: 100;
+			padding: 1rem;
+		}
+		.modal-overlay.active {
+			display: flex !important;
+		}
+		.modal-box {
+			background: #fff;
+			border: clamp(2px, 0.5vw, 3px) solid #000;
+			box-shadow: clamp(4px, 1vw, 6px) clamp(4px, 1vw, 6px) 0 #000;
+			max-height: 90vh;
+			max-width: 100%;
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+		}
+		.page {
+			z-index: 1;
+		}
+		.page.active {
+			z-index: 10;
+		}
+		#page-settings, #page-info {
+			z-index: 100;
+			background: rgba(0,0,0,0.5);
+		}
+		#page-settings:not(.active), #page-info:not(.active) {
+			display: none !important;
+		}
+
+		/* 性能监控面板 */
+		.perf-panel {
+			position: absolute;
+			top: 80px;
+			right: 10px;
+			background: rgba(0,0,0,0.8);
+			color: #0f0;
+			font-family: monospace;
+			font-size: 11px;
+			padding: 8px;
+			border: 2px solid #000;
+			display: none;
+		}
+		.perf-panel.active {
+			display: block;
+		}
+
+		/* 离线提示 */
+		.offline-banner {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			background: #ff6b6b;
+			color: white;
+			text-align: center;
+			padding: 4px;
+			font-size: 12px;
+			font-weight: bold;
+			z-index: 1000;
+			display: none;
+		}
+		.offline-banner.active {
+			display: block;
+		}

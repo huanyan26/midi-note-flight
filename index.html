@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<title>NOTE FLIGHT — MIDI 音符动画生成器</title>
+	<link rel="icon" type="image/png" sizes="32x32" href="https://s41.ax1x.com/2026/04/18/pe6klb4.png">
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<div class="offline-banner" id="offlineBanner">⚠️ 离线模式 - 部分功能可能受限</div>
+	<canvas id="canvas"></canvas>
+	
+	<!-- 性能监控面板 (调试用) -->
+	<div class="perf-panel" id="perfPanel">
+		<div>FPS: <span id="fpsDisplay">--</span></div>
+		<div>Objects: <span id="objDisplay">--</span></div>
+		<div>Pool: <span id="poolDisplay">--</span></div>
+		<div>Audio Drift: <span id="driftDisplay">--</span>ms</div>
+	</div>
+	
+	<div id="app">
+		<!-- 1. 启动页 /home -->
+		<div id="page-home" class="page active items-center justify-center bg-gray-200/95 p-4">
+			<div class="flat-box p-4 sm:p-8 max-w-sm sm:max-w-md w-full text-center page-transition">
+				<div class="mb-4 sm:mb-6">
+					<div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-yellow-300 border-4 border-black flex items-center justify-center">
+						<svg class="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+							<path d="M9 18V5l12-3v13M9 18c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+						</svg>
+					</div>
+				</div>
+				<h2 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">音符动画生成器</h2>
+				<div id="homeVersionBadge" class="mb-3"></div>
+				<p class="text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm" id="homeProjectInfo"></p>
+				<button onclick="router.navigate('import')" class="flat-btn red py-2 sm:py-3 px-6 sm:px-8 text-base sm:text-lg w-full mb-3">导入 MIDI 文件</button>
+				<button onclick="router.navigate('songs')" class="flat-btn blue py-2 sm:py-3 px-6 sm:px-8 text-base sm:text-lg w-full mb-3">查看乐曲列表</button>
+				<button onclick="router.navigate('settings')" class="flat-btn gray py-2 sm:py-3 px-6 sm:px-8 text-base sm:text-lg w-full mb-3">设置</button>
+				<button onclick="showProjectInfo()" class="flat-btn yellow py-2 sm:py-3 px-6 sm:px-8 text-base sm:text-lg w-full">关于项目</button>
+			</div>
+		</div>
+
+		<!-- 2. 导入页 /import -->
+		<div id="page-import" class="page items-center justify-center bg-gray-200/95 p-4">
+			<div class="flat-box p-4 sm:p-8 max-w-sm sm:max-w-md w-full text-center page-transition">
+				<div class="mb-4 sm:mb-6">
+					<div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-blue-300 border-4 border-black flex items-center justify-center">
+						<svg class="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+						</svg>
+					</div>
+				</div>
+				<h2 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">导入 MIDI 文件</h2>
+				<p class="text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm">选择 MIDI 文件开始生成音符动画<br>支持 .mid .midi .midi2 格式</p>
+				<button onclick="selectFile()" class="flat-btn blue py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg w-full mb-3">选择文件</button>
+				<input type="file" id="fileInput" accept=".mid,.midi,.midi2" onchange="handleFileSelect(event)">
+				<button onclick="router.back()" class="flat-btn gray py-2 sm:py-3 px-6 sm:px-8 text-sm sm:text-base w-full">← 返回</button>
+			</div>
+		</div>
+
+		<!-- 3. 加载页 /loading -->
+		<div id="page-loading" class="page items-center justify-center bg-gray-200/95 p-4">
+			<div class="flat-box p-6 sm:p-8 text-center page-transition">
+				<div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+				<h3 class="text-base sm:text-lg font-bold">计算飞行轨迹...</h3>
+				<p class="text-xs sm:text-sm text-gray-600 mt-2">空间索引构建中 · 对象池预热</p>
+				<div class="mt-4 text-xs text-gray-400" id="loadingVersionInfo"></div>
+			</div>
+		</div>
+
+		<!-- 4. 乐曲列表页 /songs -->
+		<div id="page-songs" class="page items-center justify-center bg-gray-200/95 p-4">
+			<div class="flat-box p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] flex flex-col page-transition">
+				<div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-black">
+					<div>
+						<h2 class="text-xl sm:text-2xl font-bold">乐曲列表</h2>
+						<p class="text-xs text-gray-500 mt-1">共 <span id="songCountDisplay">0</span> 首乐曲</p>
+					</div>
+					<div class="flex gap-2">
+						<button onclick="router.navigate('import')" class="flat-btn blue py-2 px-4 text-sm">+ 添加</button>
+						<button onclick="router.navigate('settings')" class="flat-btn gray w-10 h-10 flex items-center justify-center p-0" title="设置">
+							<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+								<circle cx="12" cy="12" r="3"></circle>
+								<path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 6.34L2.1 2.1m17.8 17.8l-4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24 4.24l-4.24 4.24M6.34 6.34l-4.24-4.24" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<div id="songListContainer" class="song-list-scroll flex-1 pr-2"></div>
+				<div class="mt-4 pt-3 border-t-2 border-black flex justify-between items-center">
+					<button onclick="router.back()" class="flat-btn gray py-2 px-4 text-sm">← 返回</button>
+					<div class="text-xs text-gray-500" id="songsPageVersion"></div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 5. 设置页 /settings -->
+		<div id="page-settings" class="page modal-overlay">
+			<div class="modal-box p-4 sm:p-6 max-w-md w-full">
+				<div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-black">
+					<h2 class="text-xl sm:text-2xl font-bold">设置</h2>
+					<button onclick="closeModal('settings')" class="flat-btn w-8 h-8 flex items-center justify-center p-0 text-lg">×</button>
+				</div>
+				<div class="settings-scroll overflow-y-auto flex-1 pr-2 space-y-4">
+					<div class="space-y-2">
+						<div class="flex items-center justify-between">
+							<label class="font-bold text-sm">主音量</label>
+							<span class="text-sm font-bold text-blue-600" id="volumeDisplay">60%</span>
+						</div>
+						<input type="range" min="0" max="100" value="60" id="volumeSlider" class="flat-slider" oninput="updateVolume(this.value)">
+					</div>
+
+					<div class="space-y-3 pt-2 border-t-2 border-black">
+						<h3 class="font-bold text-sm uppercase">播放设置</h3>
+						<div class="flex items-center justify-between p-2 bg-gray-100 border-2 border-black">
+							<span class="text-sm font-bold">自动播放</span>
+							<input type="checkbox" id="autoPlayToggle" class="flat-toggle" onchange="toggleAutoPlay(this.checked)">
+						</div>
+						<div class="flex items-center justify-between p-2 bg-gray-100 border-2 border-black">
+							<span class="text-sm font-bold">高精度音频同步</span>
+							<input type="checkbox" id="highPrecisionToggle" class="flat-toggle" checked onchange="toggleHighPrecision(this.checked)">
+						</div>
+						<p class="text-xs text-gray-500">启用后使用 Tone.Transport 作为主时间源</p>
+					</div>
+
+					<div class="space-y-3 pt-2 border-t-2 border-black">
+						<h3 class="font-bold text-sm uppercase">性能优化</h3>
+						<div class="flex items-center justify-between p-2 bg-gray-100 border-2 border-black">
+							<span class="text-sm font-bold">空间分区索引</span>
+							<input type="checkbox" id="spatialIndexToggle" class="flat-toggle" checked onchange="toggleSpatialIndex(this.checked)">
+						</div>
+						<div class="flex items-center justify-between p-2 bg-gray-100 border-2 border-black">
+							<span class="text-sm font-bold">对象池复用</span>
+							<input type="checkbox" id="objectPoolToggle" class="flat-toggle" checked onchange="toggleObjectPool(this.checked)">
+						</div>
+						<div class="flex items-center justify-between p-2 bg-gray-100 border-2 border-black">
+							<span class="text-sm font-bold">显示性能面板</span>
+							<input type="checkbox" id="perfPanelToggle" class="flat-toggle" onchange="togglePerfPanel(this.checked)">
+						</div>
+					</div>
+
+					<div class="space-y-3 pt-2 border-t-2 border-black">
+						<h3 class="font-bold text-sm uppercase">显示选项</h3>
+						<div class="flex items-center justify-between p-2 bg-gray-100 border-2 border-black">
+							<span class="text-sm font-bold">时间/BPM统计</span>
+							<input type="checkbox" id="showStatusToggle" class="flat-toggle" onchange="toggleDisplay('status', this.checked)">
+						</div>
+						<div class="flex items-center justify-between p-2 bg-gray-100 border-2 border-black">
+							<span class="text-sm font-bold">音轨面板</span>
+							<input type="checkbox" id="showTrackToggle" class="flat-toggle" onchange="toggleDisplay('track', this.checked)">
+						</div>
+						<div class="flex items-center justify-between p-2 bg-gray-100 border-2 border-black">
+							<span class="text-sm font-bold">进度条</span>
+							<input type="checkbox" id="showProgressToggle" class="flat-toggle" checked onchange="toggleDisplay('progress', this.checked)">
+						</div>
+					</div>
+
+					<div class="space-y-2 pt-4 border-t-2 border-black">
+						<h3 class="font-bold text-sm uppercase">数据管理</h3>
+						<button onclick="migrateToIndexedDB()" class="flat-btn blue w-full py-2 text-sm">迁移到 IndexedDB</button>
+						<button onclick="clearAllData()" class="flat-btn red w-full py-2 text-sm">清除所有数据</button>
+					</div>
+
+					<div class="space-y-2 pt-4 border-t-2 border-black">
+						<button onclick="router.navigate('songs')" class="flat-btn blue w-full py-2 sm:py-3 text-sm sm:text-base">乐曲列表</button>
+						<button onclick="resetSettings()" class="flat-btn red w-full py-2 sm:py-3 text-sm sm:text-base">恢复默认设置</button>
+					</div>
+
+					<div class="space-y-3 pt-4 border-t-2 border-black">
+						<div class="flex items-center justify-between">
+							<h3 class="font-bold text-sm uppercase">项目信息</h3>
+							<span id="settingsVersionBadge"></span>
+						</div>
+						<div class="p-3 bg-yellow-50 border-2 border-black text-xs leading-relaxed" id="settingsProjectInfo"></div>
+						<button onclick="showProjectInfo()" class="flat-btn yellow w-full py-2 text-sm">查看完整信息</button>
+					</div>
+				</div>
+				<div class="mt-4 pt-3 border-t-2 border-black text-center">
+					<button onclick="closeModal('settings')" class="flat-btn gray py-2 px-6 text-sm">关闭</button>
+					<p class="text-xs text-gray-500 mt-2" id="settingsFooterVersion"></p>
+				</div>
+			</div>
+		</div>
+
+		<!-- 6. 游戏页 /play -->
+		<div id="page-play" class="page">
+			<div class="game-overlay">
+				<div id="topStatusBar" class="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 flex justify-between items-start">
+					<div class="flat-box p-2 sm:p-4 flex items-center gap-2 sm:gap-6 flex-wrap">
+						<div class="hidden sm:block cursor-pointer" onclick="router.navigate('songs')">
+							<h1 class="text-lg sm:text-xl font-bold hover:text-blue-600">NOTE FLIGHT</h1>
+							<p class="text-xs text-gray-600 mt-1">固定时间 · 随机地点 · 边界演奏</p>
+						</div>
+						<div class="hidden sm:block h-10 w-0.5 bg-black"></div>
+						<div id="statsContainer" class="flex gap-2 sm:gap-4 text-center hidden">
+							<div>
+								<div class="text-xs font-bold text-gray-500">BPM</div>
+								<div class="text-lg sm:text-2xl font-bold" id="bpmDisplay">--</div>
+							</div>
+							<div>
+								<div class="text-xs font-bold text-gray-500">TIME</div>
+								<div class="text-lg sm:text-2xl font-bold text-blue-600" id="timeDisplay">0.00</div>
+							</div>
+							<div>
+								<div class="text-xs font-bold text-gray-500">ACTIVE</div>
+								<div class="text-lg sm:text-2xl font-bold text-green-600" id="activeCount">0</div>
+							</div>
+						</div>
+					</div>
+					<div class="flex gap-2">
+						<button onclick="openModal('settings', 'play')" class="flat-btn gray w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center p-0" title="设置">
+							<svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+								<circle cx="12" cy="12" r="3"></circle>
+								<path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 6.34L2.1 2.1m17.8 17.8l-4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24 4.24l-4.24 4.24M6.34 6.34l-4.24-4.24" />
+							</svg>
+						</button>
+						<button onclick="router.navigate('songs')" class="flat-btn gray w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center p-0" title="乐曲列表">
+							<svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+								<path d="M3 12h18M3 6h18M3 18h18" />
+							</svg>
+						</button>
+						<div id="syncStatus" class="flat-box p-2 sm:p-3 hidden">
+							<div class="flex items-center gap-2">
+								<div class="w-2 sm:w-3 h-2 sm:h-3 rounded-full bg-green-500 border-2 border-black animate-pulse"></div>
+								<span class="text-xs font-bold">AUDIO</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div id="trackPanel" class="absolute top-16 sm:top-24 left-2 sm:left-4 flat-box p-2 sm:p-4 hidden max-w-[150px] sm:max-w-xs">
+					<h3 class="text-xs sm:text-sm font-bold mb-2 sm:mb-3 uppercase border-b-2 border-black pb-2">音轨</h3>
+					<div id="trackList" class="space-y-1 sm:space-y-2 max-h-48 sm:max-h-80 overflow-y-auto"></div>
+					<div class="mt-2 sm:mt-3 pt-2 border-t-2 border-black text-xs text-gray-500">
+						共 <span id="totalNotes">0</span> 个音符
+					</div>
+				</div>
+
+				<div id="controls" class="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flat-box p-2 sm:p-4">
+					<div class="flex items-center gap-2 sm:gap-4">
+						<button onclick="togglePlay()" id="playBtn" class="flat-btn blue w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center p-0">
+							<svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M8 5v14l11-7z" />
+							</svg>
+						</button>
+						<button onclick="resetSim()" class="flat-btn w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center p-0">
+							<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+								<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+							</svg>
+						</button>
+						<div class="h-6 sm:h-8 w-0.5 bg-black"></div>
+						<div class="flex items-center gap-2">
+							<span class="text-xs font-bold">速度</span>
+							<input type="range" min="0.5" max="2" step="0.1" value="1" id="speedSlider" class="flat-slider w-20 sm:w-24" oninput="updateSpeed(this.value)">
+							<span class="text-xs font-bold w-8 sm:w-10" id="speedDisplay">1.0x</span>
+						</div>
+					</div>
+				</div>
+				<div class="absolute bottom-2 right-2 text-[10px] text-gray-400 pointer-events-none" id="playPageVersion"></div>
+			</div>
+		</div>
+
+		<!-- 7. 项目信息弹窗 /info -->
+		<div id="page-info" class="page modal-overlay">
+			<div class="modal-box p-4 sm:p-6 max-w-lg w-full">
+				<div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-black">
+					<div class="flex items-center gap-3">
+						<div class="w-10 h-10 bg-yellow-300 border-2 border-black flex items-center justify-center">
+							<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+								<path d="M9 18V5l12-3v13M9 18c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+							</svg>
+						</div>
+						<div>
+							<h2 class="text-xl font-bold">NOTE FLIGHT</h2>
+							<div id="infoVersionBadge" class="mt-1"></div>
+						</div>
+					</div>
+					<button onclick="closeModal('info')" class="flat-btn w-8 h-8 flex items-center justify-center p-0 text-lg">×</button>
+				</div>
+				<div class="settings-scroll overflow-y-auto flex-1 pr-2 space-y-4">
+					<div class="space-y-2">
+						<h3 class="font-bold text-sm uppercase border-b-2 border-black pb-1">基本信息</h3>
+						<div class="info-grid" id="infoBasicGrid"></div>
+					</div>
+					<div class="space-y-2">
+						<h3 class="font-bold text-sm uppercase border-b-2 border-black pb-1">项目简介</h3>
+						<p class="text-sm leading-relaxed text-gray-700" id="infoDescription"></p>
+					</div>
+					<div class="space-y-2">
+						<h3 class="font-bold text-sm uppercase border-b-2 border-black pb-1">技术栈</h3>
+						<div id="infoTechStack"></div>
+					</div>
+					<div class="space-y-2">
+						<h3 class="font-bold text-sm uppercase border-b-2 border-black pb-1">更新日志</h3>
+						<div class="changelog-list" id="infoChangelog"></div>
+					</div>
+					<div class="space-y-2">
+						<h3 class="font-bold text-sm uppercase border-b-2 border-black pb-1">性能特性</h3>
+						<div class="text-xs space-y-1 text-gray-600" id="perfFeatures">
+							<div>✓ 四叉树空间分区索引</div>
+							<div>✓ 对象池复用系统</div>
+							<div>✓ Tone.Transport 高精度同步</div>
+							<div>✓ MIDI 2.0 UMP 支持</div>
+							<div>✓ IndexedDB 大文件存储</div>
+							<div>✓ PWA 离线支持</div>
+						</div>
+					</div>
+					<div class="space-y-2">
+						<h3 class="font-bold text-sm uppercase border-b-2 border-black pb-1">联系我们</h3>
+						<div class="info-grid" id="infoContactGrid"></div>
+					</div>
+					<div class="p-3 bg-gray-100 border-2 border-black text-xs text-gray-600" id="infoLicense"></div>
+				</div>
+				<div class="mt-4 pt-3 border-t-2 border-black text-center flex justify-between items-center">
+					<span class="text-xs text-gray-400" id="infoBuildDate"></span>
+					<button onclick="closeModal('info')" class="flat-btn gray py-2 px-6 text-sm">关闭</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 模块化 JavaScript -->
+	<script src="js/config.js"></script>
+	<script src="js/easings.js"></script>
+	<script src="js/time-map.js"></script>
+	<script src="js/store.js"></script>
+	<script src="js/quadtree.js"></script>
+	<script src="js/objectpool.js"></script>
+	<script src="js/perf-degrader.js"></script>
+	<script src="js/indexeddb.js"></script>
+	<script src="js/midi-parser.js"></script>
+	<script src="js/audio-engine.js"></script>
+	<script src="js/entities.js"></script>
+	<script src="js/renderer.js"></script>
+	<script src="js/ui-controller.js"></script>
+	<script src="js/app.js"></script>
+</body>
+</html>

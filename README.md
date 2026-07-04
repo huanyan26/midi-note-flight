@@ -5,13 +5,13 @@
 [![Version](https://img.shields.io/badge/version-1.3.2--b-blue)](https://github.com/huanyan26/midi-note-flight)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-## 🎬 效果预览
+## 效果预览
 
 打开 `1.3.2-b-optimized.html` 即可在浏览器中直接运行。导入 MIDI 文件后，音符将以彩色三角形形式从画面中央生成，飞向四周边界（每个音轨对应一个方向），命中边界时触发 Tone.js 音频合成并产生粒子爆炸特效。
 
-## ✨ 核心特性
+## 核心特性
 
-### 🚀 v1.3.2-b 性能优化版
+### v1.3.2-b 性能优化版
 
 | 特性 | 说明 |
 |------|------|
@@ -24,7 +24,7 @@
 | **音频抢占调度** | 限制每帧触发音符数和全局复音数，防止爆音 |
 | **离屏 Canvas 缓存** | 背景网格和边界预渲染到离屏 Canvas，减少每帧绘制量 |
 
-### 🏗️ 架构亮点
+### 架构亮点
 
 - **四叉树空间分区** — 空间查询 O(log n)，支持可配置容量和深度
 - **对象池复用系统** — FlyingTriangle + Particle 双池，消除高频 GC
@@ -33,7 +33,7 @@
 - **IndexedDB 存储** — 大文件持久化存储，支持乐曲列表管理
 - **MIDI 2.0 UMP 支持** — 兼容新一代 MIDI 格式
 
-## 🛠️ 技术栈
+## 技术栈
 
 | 技术 | 用途 |
 |------|------|
@@ -45,7 +45,7 @@
 | **QuadTree** | 自定义空间分区索引算法 |
 | **Proxy Store** | ES6 Proxy 响应式状态管理 |
 
-## 📦 快速开始
+## 快速开始
 
 1. **克隆仓库**
    ```bash
@@ -71,7 +71,7 @@
    - <kbd>R</kbd> — 重置
    - <kbd>Esc</kbd> — 返回乐曲列表
 
-## ⚙️ 设置选项
+## 设置选项
 
 | 选项 | 说明 |
 |------|------|
@@ -84,14 +84,14 @@
 | **时间/BPM 统计** | 显示当前时间、BPM、活跃音符数 |
 | **音轨面板** | 显示各音轨的详细信息 |
 
-## 📁 文件说明
+## 文件说明
 
 | 文件 | 说明 |
 |------|------|
 | `1.3.2-a-optimized.html` | 原始版本（四叉树 + 对象池 + MIDI 2.0） |
 | `1.3.2-b-optimized.html` | **性能优化版**（Web Worker + swap-remove + LOD + 自适应降级） |
 
-## 🎹 工作原理
+## 工作原理
 
 ```
 MIDI 文件 → EnhancedMidiParser / Web Worker → 音符列表
@@ -113,7 +113,7 @@ MIDI 文件 → EnhancedMidiParser / Web Worker → 音符列表
                                             (离屏缓存 + 直接绘制)
 ```
 
-## 🎯 性能优化对比
+## 性能优化对比
 
 | 场景 | v1.3.2-a | v1.3.2-b | 提升 |
 |------|----------|----------|------|
@@ -144,10 +144,10 @@ MIDI 文件 → EnhancedMidiParser / Web Worker → 音符列表
 - PWA 离线支持
 - Proxy-based 状态管理
 
-## 👤 作者
+## 作者
 
 **huanyan26** — [huanyan26@qq.com](mailto:huanyan26@qq.com)
 
-## 📄 许可证
+## 许可证
 
 MIT License — 详见 [LICENSE](LICENSE)

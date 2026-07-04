@@ -262,7 +262,10 @@ const colorCache = new Map();
 				}
 			}
 			
-			draw();
+			// 模态框打开时跳过 Canvas 绘制，避免渲染冲突
+			if (!modalActive) {
+				draw();
+			}
 			requestAnimationFrame(renderLoop);
 		}
 		

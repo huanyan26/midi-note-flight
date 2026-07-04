@@ -129,6 +129,10 @@ const SONG_LIST_KEY = 'note_flight_songs';
 						loadSongList().then(() => renderSongList());
 						break;
 					case 'play':
+						// 确保 Canvas 尺寸正确（从其他页面切回时）
+						requestAnimationFrame(() => {
+							resize();
+						});
 						if (params.id) {
 							playSongFromList(params.id);
 						}
@@ -147,13 +151,14 @@ const SONG_LIST_KEY = 'note_flight_songs';
 
 
 		let modalReturnPage = null;
+		let modalActive = false;  // 追踪模态框是否打开，用于暂停 Canvas 渲染
 		
 		function openModal(modalId, returnTo) {
 			modalReturnPage = returnTo || router.currentPage;
+			modalActive = true;
 			const modal = document.getElementById('page-' + modalId);
 			if (modal) {
 				modal.classList.add('active');
-				document.body.style.overflow = 'hidden';
 			}
 		}
 		
@@ -161,9 +166,18 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			const modal = document.getElementById('page-' + modalId);
 			if (modal) {
 				modal.classList.remove('active');
-				document.body.style.overflow = '';
 			}
+			const wasReturnPage = modalReturnPage;
 			modalReturnPage = null;
+			modalActive = false;
+			
+			// 如果返回的是 play 页面，强制刷新 Canvas
+			if (wasReturnPage === 'play' && router.currentPage === 'play') {
+				requestAnimationFrame(() => {
+					invalidateCache();
+					resize();
+				});
+			}
 		}
 
 

@@ -184,10 +184,10 @@ const SONG_LIST_KEY = 'note_flight_songs';
 		const ProjectInfo = {
 			name: "NOTE FLIGHT",
 			fullName: "MIDI 音符动画生成器",
-			version: "1.3.2-b",
+			version: "1.3.2",
 			buildDate: "2026-07-04",
 			lastUpdate: "2026-07-04",
-			codename: "Performance+",
+			codename: "Stable",
 			
 			author: {
 				name: "huanyan26",
@@ -196,55 +196,14 @@ const SONG_LIST_KEY = 'note_flight_songs';
 				website: null
 			},
 			
-			description: "NOTE FLIGHT 是一个基于 Web 的 MIDI 可视化工具，将 MIDI 文件转换为视觉化的音符飞行动画。v1.3.2-b 版本新增 Web Worker 异步解析、swap-remove 渲染、分帧粒子系统、动态对象池、音频抢占调度、LOD 细节层次、自适应性能降级等深度优化。",
+			description: "NOTE FLIGHT 是一个基于 Web 的 MIDI 可视化工具，将 MIDI 文件转换为视觉化的音符飞行动画。",
+
+			githubUrl: "https://github.com/huanyan26/midi-note-flight",
+			demoUrl: "https://huanyan26.github.io/midi-note-flight/",
 			
-			techStack: [
-				{ name: "HTML5 Canvas", type: "渲染", version: "API" },
-				{ name: "Tailwind CSS", type: "样式", version: "3.x" },
-				{ name: "Tone.js", type: "音频", version: "14.8.49" },
-				{ name: "IndexedDB", type: "存储", version: "API" },
-				{ name: "Web Worker", type: "并发", version: "API" },
-				{ name: "Proxy Store", type: "状态", version: "ES6" },
-				{ name: "QuadTree", type: "算法", version: "Custom" },
-				{ name: "Perf Degrader", type: "自适应", version: "Custom" }
-			],
+			techStack: [],
 			
-			changelog: [
-				{
-					version: "1.3.2-b",
-					date: "2026-07-04",
-					changes: [
-						"Web Worker 异步 MIDI 解析（主线程零阻塞）",
-						"渲染循环 swap-remove（消除 splice O(n)）",
-						"粒子分帧处理 + 动态对象池扩容",
-						"音频抢占调度（限制复音/防止爆音）",
-						"LOD 细节层次（屏幕外/远距离降级）",
-						"自适应性能降级系统",
-						"DOM 更新降频至 200ms"
-					],
-					type: "beta"
-				},
-				{
-					version: "1.3.2-a",
-					date: "2026-04-19",
-					changes: [
-						"四叉树空间分区索引系统",
-						"FlyingTriangle + Particle 对象池",
-						"Tone.Transport 高精度音频同步",
-						"MIDI 2.0 UMP 格式支持",
-						"IndexedDB 大文件存储",
-						"PWA 离线支持",
-						"Proxy-based 状态管理"
-					],
-					type: "alpha"
-				},
-				{
-					version: "1.3.1",
-					date: "2026-04-18",
-					changes: ["正式版发布", "项目全信息管理系统", "移动端优化"],
-					type: "stable"
-				}
-			],
+			changelog: [],
 			
 			getFormattedInfo() {
 				return {
@@ -257,15 +216,11 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			},
 			
 			getVersionType() {
-				if (this.version.includes('alpha')) return 'alpha';
-				if (this.version.includes('beta')) return 'beta';
 				return 'stable';
 			},
 			
 			getVersionBadgeClass() {
-				const type = this.getVersionType();
-				return type === 'alpha' ? 'bg-red-500' : 
-					   type === 'beta' ? 'bg-yellow-400 text-black' : 'bg-green-500';
+				return 'bg-green-500';
 			}
 		};
 
@@ -292,6 +247,16 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			}
 			
 			document.getElementById('playPageVersion').textContent = `${info.name} ${formatted.shortVersion}`;
+			
+			// 设置页项目信息卡片
+			const settingsInfo = document.getElementById('settingsProjectInfo');
+			if (settingsInfo) {
+				settingsInfo.innerHTML = `${info.description}<br><br><a href="${info.githubUrl}" target="_blank" style="color: #4ecdc4; font-weight: bold;">GitHub →</a>`;
+			}
+			const settingsFooter = document.getElementById('settingsFooterVersion');
+			if (settingsFooter) {
+				settingsFooter.textContent = formatted.buildInfo;
+			}
 		}
 
 		function showProjectInfo() {
@@ -300,41 +265,6 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			const formatted = info.getFormattedInfo();
 			
 			document.getElementById('infoVersionBadge').innerHTML = `<span class="version-badge ${info.getVersionBadgeClass()} text-xs">${formatted.shortVersion}</span>`;
-			
-			document.getElementById('infoBasicGrid').innerHTML = `
-				<span class="info-label">版本号</span><span class="info-value font-bold">${formatted.fullVersion}</span>
-				<span class="info-label">开发代号</span><span class="info-value">${info.codename}</span>
-				<span class="info-label">构建日期</span><span class="info-value">${info.buildDate}</span>
-				<span class="info-label">开发者</span><span class="info-value">${info.author.name}</span>
-				<span class="info-label">状态</span><span class="info-value capitalize">${info.getVersionType()}</span>
-			`;
-			
-			document.getElementById('infoDescription').textContent = info.description;
-			
-			document.getElementById('infoTechStack').innerHTML = info.techStack.map(tech => 
-				`<span class="tech-stack-tag" title="${tech.type} ${tech.version}">${tech.name}</span>`
-			).join('');
-			
-			document.getElementById('infoChangelog').innerHTML = info.changelog.map(log => `
-				<div class="changelog-item">
-					<div class="flex justify-between items-center mb-1">
-						<span class="changelog-version">v${log.version}</span>
-						<span class="changelog-date">${log.date}</span>
-					</div>
-					<ul class="list-disc list-inside space-y-1 text-gray-700">
-						${log.changes.map(change => `<li>${change}</li>`).join('')}
-					</ul>
-				</div>
-			`).join('');
-			
-			document.getElementById('infoContactGrid').innerHTML = `
-				<span class="info-label">电子邮箱</span>
-				<span class="info-value"><a href="mailto:${info.author.email}" class="text-blue-600 hover:underline">${info.author.email}</a></span>
-				<span class="info-label">MIDI资源</span>
-				<span class="info-value"><a href="https://www.midishow.com" target="_blank" class="text-blue-600 hover:underline">MIDIshow.com</a></span>
-			`;
-			
-			document.getElementById('infoLicense').innerHTML = `<strong>MIT License</strong><br>本项目采用 MIT 许可证开源`;
 			document.getElementById('infoBuildDate').textContent = formatted.buildInfo;
 		}
 

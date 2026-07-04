@@ -20,6 +20,11 @@ const colorCache = new Map();
 			// 构建背景网格缓存（仅在尺寸变化时重建）
 			const needRebuildGrid = !bgGridCache || bgGridCache.width !== w || bgGridCache.height !== h;
 			if (needRebuildGrid) {
+				// 显式释放旧 Canvas 引用，帮助 GC 及时回收
+				if (bgGridCache) {
+					bgGridCache.width = 0;
+					bgGridCache.height = 0;
+				}
 				bgGridCache = document.createElement('canvas');
 				bgGridCache.width = w;
 				bgGridCache.height = h;
@@ -44,6 +49,11 @@ const colorCache = new Map();
 			// 构建边界缓存（仅在尺寸变化时重建）
 			const needRebuildBoundary = !boundaryCache || boundaryCache.width !== w || boundaryCache.height !== h;
 			if (needRebuildBoundary) {
+				// 显式释放旧 Canvas 引用
+				if (boundaryCache) {
+					boundaryCache.width = 0;
+					boundaryCache.height = 0;
+				}
 				boundaryCache = document.createElement('canvas');
 				boundaryCache.width = w;
 				boundaryCache.height = h;
@@ -198,8 +208,11 @@ const colorCache = new Map();
 					
 					if (poolEnabled) {
 						const triangle = trianglePool.acquire();
-						triangle.init(allNotes[nextNoteIndex]);
-						activeTriangles.push(triangle);
+						if (triangle) {
+							triangle.init(allNotes[nextNoteIndex]);
+							activeTriangles.push(triangle);
+						}
+						// acquire 返回 null 时跳过该音符（池已满）
 					} else {
 						const noteData = allNotes[nextNoteIndex];
 						const t = new PooledFlyingTriangle();

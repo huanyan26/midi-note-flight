@@ -170,14 +170,14 @@ class PooledFlyingTriangle {
 						const effectiveCount = PerfDegrader.getParticleCount(CONFIG.PARTICLE_COUNT);
 						if (effectiveCount > 0 && appStore.getState().settings.objectPool) {
 							particlePool.ensureCapacity(effectiveCount + 5);
-							const poolStats = particlePool.getStats();
-							const count = Math.min(effectiveCount, poolStats.available);
 							const maxPerHit = CONFIG.MAX_PARTICLES_PER_FRAME;
-							const actualCount = Math.min(count, maxPerHit);
+							const actualCount = Math.min(effectiveCount, maxPerHit);
 							for (let i = 0; i < actualCount; i++) {
 								const p = particlePool.acquire();
-								p.init(this.x, this.y, this.color, this.targetBoundary);
-								activeParticles.push(p);
+								if (p) {
+									p.init(this.x, this.y, this.color, this.targetBoundary);
+									activeParticles.push(p);
+								}
 							}
 						} else if (effectiveCount > 0) {
 							const actualCount = Math.min(effectiveCount, CONFIG.MAX_PARTICLES_PER_FRAME);

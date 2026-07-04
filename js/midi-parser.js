@@ -68,7 +68,7 @@ class UMPParser {
 
 		// 使用 Blob URL 创建内联 Worker，避免大文件解析时主线程卡死
 		let midiWorker = null;
-		let midiWorkerReady = false;
+		let midiWorkerUrl = null;
 
 		function getMidiWorker() {
 			if (midiWorker) return midiWorker;
@@ -176,8 +176,21 @@ class UMPParser {
 			`;
 
 			const blob = new Blob([workerCode], { type: 'application/javascript' });
-			midiWorker = new Worker(URL.createObjectURL(blob));
+			midiWorkerUrl = URL.createObjectURL(blob);
+			midiWorker = new Worker(midiWorkerUrl);
 			return midiWorker;
+		}
+
+		// 终止 Worker 并释放 Blob URL，防止内存泄漏
+		function terminateMidiWorker() {
+			if (midiWorker) {
+				midiWorker.terminate();
+				midiWorker = null;
+			}
+			if (midiWorkerUrl) {
+				URL.revokeObjectURL(midiWorkerUrl);
+				midiWorkerUrl = null;
+			}
 		}
 
 		function parseMidiInWorker(buffer) {

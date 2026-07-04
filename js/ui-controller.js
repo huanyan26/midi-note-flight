@@ -328,11 +328,18 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			if (appStore.getState().settings.objectPool) {
 				trianglePool.releaseAll();
 				particlePool.releaseAll();
+				// 回收池中多余对象，防止长时间运行后膨胀
+				trianglePool.trim(200);
+				particlePool.trim(500);
 			}
 			
 			activeTriangles = [];
 			activeParticles = [];
 			nextNoteIndex = 0;
+			
+			// 释放旧的空间索引
+			spatialIndex = null;
+			densityHistogram = null;
 			
 			document.getElementById('playBtn').innerHTML = '<svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 			document.getElementById('playBtn').className = 'flat-btn blue w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center p-0';
@@ -528,12 +535,18 @@ const SONG_LIST_KEY = 'note_flight_songs';
 				if (dbStorage.isReady) {
 					await dbStorage.deleteSong(songId);
 				}
-				songList = songList.filter(s => s.id !== songId);
+				// 从内存列表中移除并释放 midiData
+				const idx = songList.findIndex(s => s.id === songId);
+				if (idx !== -1) {
+					songList[idx].midiData = null;  // 先释放大对象
+					songList.splice(idx, 1);
+				}
 				await saveSongList();
 				renderSongList();
 				
 				if (currentSongId === songId) {
 					currentSongId = null;
+					midiData = null;
 					resetSim();
 				}
 			} catch (e) {
@@ -619,6 +632,10 @@ const SONG_LIST_KEY = 'note_flight_songs';
 				);
 				currentSongId = songId;
 				
+				// 释放旧 MIDI 数据，避免大文件数据重复占用内存
+				if (midiData && midiData !== parsedMidi) {
+					midiData = null;
+				}
 				midiData = parsedMidi;
 				prepareNotes();
 				updateTrackList();
@@ -647,6 +664,10 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			try {
 				await audioEngine.init();
 				
+				// 释放旧 MIDI 数据
+				if (midiData && midiData !== song.midiData) {
+					midiData = null;
+				}
 				midiData = song.midiData;
 				
 				if (midiData.timeMap && !midiData.timeMap.tickToSeconds) {
@@ -670,11 +691,15 @@ const SONG_LIST_KEY = 'note_flight_songs';
 		}
 		
 		function prepareNotes() {
+			// 释放旧数据引用，帮助 GC
+			allNotes.length = 0;
 			allNotes = [];
 			
 			if (appStore.getState().settings.objectPool) {
 				trianglePool.releaseAll();
 				particlePool.releaseAll();
+				trianglePool.trim(200);
+				particlePool.trim(500);
 			}
 			
 			activeTriangles = [];

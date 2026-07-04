@@ -95,6 +95,12 @@ class HighPrecisionAudioEngine {
 			
 			stop() { 
 				Tone.Transport.stop();
+				// 释放所有合成器，防止切换歌曲后内存泄漏
+				this.synths.forEach(synth => {
+					synth.disconnect();
+					synth.dispose();
+				});
+				this.synths.clear();
 				appStore.setState(state => { state.isPlaying = false; });
 			}
 			

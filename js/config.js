@@ -10,8 +10,13 @@
 
 
 		const canvas = document.getElementById('canvas');
-		const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
-		ctx.imageSmoothingEnabled = false; // 不需要平滑的像素艺术风格
+		// 立即设置 Canvas 尺寸，避免 renderLoop 首帧时尺寸为 0
+		canvas.width = window.innerWidth || 800;
+		canvas.height = window.innerHeight || 600;
+		
+		// alpha: false 需要每帧完全覆盖画布，否则显示黑底
+		const ctx = canvas.getContext('2d', { alpha: false });
+		ctx.imageSmoothingEnabled = false;
 		
 		// 离屏 Canvas 缓存（性能优化核心）
 		let bgGridCache = null;      // 背景网格缓存
@@ -39,9 +44,6 @@
 		let lastFpsTime = 0;
 		let currentFps = 0;
 		let lastDomUpdateTime = 0;    // DOM更新节流
-		
-		// resize 防抖
-		let resizeDebounceTimer = null;
 
 
 		function getAdaptiveConfig() {

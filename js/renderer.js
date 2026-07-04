@@ -15,29 +15,35 @@ const colorCache = new Map();
 
 		function buildBackgroundCache() {
 			const w = canvas.width, h = canvas.height;
+			if (w <= 0 || h <= 0) return; // 防止尺寸为0时崩溃
 			
-			// 构建背景网格缓存
-			if (!bgGridCache || bgGridCache.width !== w || bgGridCache.height !== h) {
+			// 构建背景网格缓存（仅在尺寸变化时重建）
+			const needRebuildGrid = !bgGridCache || bgGridCache.width !== w || bgGridCache.height !== h;
+			if (needRebuildGrid) {
 				bgGridCache = document.createElement('canvas');
 				bgGridCache.width = w;
 				bgGridCache.height = h;
 			}
 			const gctx = bgGridCache.getContext('2d');
+			// 先清空整个画布为背景色
 			gctx.fillStyle = '#fafafa';
 			gctx.fillRect(0, 0, w, h);
 			
-			const gridSize = Math.max(40, Math.min(w, h) / 10);
-			gctx.fillStyle = '#e5e5e5';
-			for (let x = gridSize; x < w; x += gridSize) {
-				for (let y = gridSize; y < h; y += gridSize) {
-					gctx.beginPath();
-					gctx.arc(x, y, Math.max(1, gridSize / 40), 0, Math.PI * 2);
-					gctx.fill();
+			if (needRebuildGrid) {
+				const gridSize = Math.max(40, Math.min(w, h) / 10);
+				gctx.fillStyle = '#e5e5e5';
+				for (let x = gridSize; x < w; x += gridSize) {
+					for (let y = gridSize; y < h; y += gridSize) {
+						gctx.beginPath();
+						gctx.arc(x, y, Math.max(1, gridSize / 40), 0, Math.PI * 2);
+						gctx.fill();
+					}
 				}
 			}
 			
-			// 构建边界缓存
-			if (!boundaryCache || boundaryCache.width !== w || boundaryCache.height !== h) {
+			// 构建边界缓存（仅在尺寸变化时重建）
+			const needRebuildBoundary = !boundaryCache || boundaryCache.width !== w || boundaryCache.height !== h;
+			if (needRebuildBoundary) {
 				boundaryCache = document.createElement('canvas');
 				boundaryCache.width = w;
 				boundaryCache.height = h;
@@ -113,8 +119,14 @@ const colorCache = new Map();
 		}
 
 		function renderLoop(timestamp) {
+			// Canvas 尺寸无效时跳过（初始化前/隐藏时）
+			if (canvas.width <= 0 || canvas.height <= 0) {
+				requestAnimationFrame(renderLoop);
+				return;
+			}
+			
 			if (!visualClock.lastFrameTime) visualClock.lastFrameTime = timestamp;
-			const frameDt = Math.min((timestamp - visualClock.lastFrameTime) / 1000, 0.1); // 上限100ms防止跳帧
+			const frameDt = Math.min((timestamp - visualClock.lastFrameTime) / 1000, 0.1);
 			visualClock.lastFrameTime = timestamp;
 			
 			// 性能降级记录
@@ -255,12 +267,25 @@ const colorCache = new Map();
 		}
 		
 		function draw() {
+			const w = canvas.width, h = canvas.height;
+			if (w <= 0 || h <= 0) return; // Canvas 未初始化时跳过
+			
 			// 使用预渲染的背景缓存（包含网格 + 背景色）
 			if (!cacheValid) buildBackgroundCache();
-			ctx.drawImage(bgGridCache, 0, 0);
 			
-			// 边界覆盖层（半透明叠加）
-			ctx.drawImage(boundaryCache, 0, 0);
+			// alpha:false 下必须先完整覆盖画布，否则显示黑底
+			if (bgGridCache && bgGridCache.width > 0) {
+				ctx.drawImage(bgGridCache, 0, 0);
+			} else {
+				// 兜底：直接填充背景色
+				ctx.fillStyle = '#fafafa';
+				ctx.fillRect(0, 0, w, h);
+			}
+			
+			// 边界覆盖层
+			if (boundaryCache && boundaryCache.width > 0) {
+				ctx.drawImage(boundaryCache, 0, 0);
+			}
 			
 			// === 绘制粒子（性能降级时可跳过） ===
 			if (!PerfDegrader.shouldSkipParticles()) {
@@ -359,8 +384,15 @@ const colorCache = new Map();
 
 
 		function resize() {
-			canvas.width = window.innerWidth;
-			canvas.height = window.innerHeight;
+			const newW = window.innerWidth || 800;
+			const newH = window.innerHeight || 600;
+			if (newW <= 0 || newH <= 0) return;
+			
+			// 尺寸没变化则跳过
+			if (canvas.width === newW && canvas.height === newH) return;
+			
+			canvas.width = newW;
+			canvas.height = newH;
 			
 			CONFIG = getAdaptiveConfig();
 			
@@ -391,10 +423,15 @@ const colorCache = new Map();
 			lastScreenSize = currentSize;
 		}
 		
-		// 防抖版本的 resize
+		// 防抖版本的 resize，使用 rAF 避免在渲染中执行
+		let resizePending = false;
 		function debouncedResize() {
-			if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
-			resizeDebounceTimer = setTimeout(resize, 50);
+			if (resizePending) return;
+			resizePending = true;
+			requestAnimationFrame(() => {
+				resize();
+				resizePending = false;
+			});
 		}
 		
 		window.addEventListener('resize', debouncedResize);

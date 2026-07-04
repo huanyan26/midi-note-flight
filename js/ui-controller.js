@@ -74,13 +74,16 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			navigate(page, params = {}) {
 				if (!this.pages.includes(page)) return;
 				
+				// 先关闭所有模态框（会同步设置 modalActive = false，但如果目标是 play 则延迟）
 				closeModal('settings');
 				closeModal('info');
 				
+				// 历史记录：仅对非模态页面做记录
 				if (this.currentPage !== page && this.currentPage !== 'settings' && this.currentPage !== 'info') {
 					this.history.push(this.currentPage);
 				}
 				
+				// 切换页面 active 状态
 				this.pages.forEach(p => {
 					document.getElementById(`page-${p}`).classList.remove('active');
 				});
@@ -88,6 +91,12 @@ const SONG_LIST_KEY = 'note_flight_songs';
 				document.getElementById(`page-${page}`).classList.add('active');
 				this.updateURL(page, params);
 				this.currentPage = page;
+				
+				// 如果目标页面不是 play，确保 modalActive 被重置
+				// （closeModal 中对于 play 返回场景会延迟重置，这里处理非 play 场景）
+				if (page !== 'play') {
+					modalActive = false;
+				}
 				
 				this.onPageEnter(page, params);
 			},
@@ -129,8 +138,11 @@ const SONG_LIST_KEY = 'note_flight_songs';
 						loadSongList().then(() => renderSongList());
 						break;
 					case 'play':
+						// 确保 Canvas 渲染恢复（从其他页面切回时 modalActive 可能处于不一致状态）
+						modalActive = false;
 						// 确保 Canvas 尺寸正确（从其他页面切回时）
 						requestAnimationFrame(() => {
+							invalidateCache();
 							resize();
 						});
 						if (params.id) {
@@ -169,14 +181,26 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			}
 			const wasReturnPage = modalReturnPage;
 			modalReturnPage = null;
-			modalActive = false;
 			
-			// 如果返回的是 play 页面，强制刷新 Canvas
+			// 如果返回的是 play 页面，需要确保 page-play 保持 active 状态
+			// 并且延迟恢复 Canvas 渲染，避免 DOM 更新和 Canvas 绘制的竞态
 			if (wasReturnPage === 'play' && router.currentPage === 'play') {
+				// 确保 page-play 保持 active（防止在 modal 关闭期间被意外移除）
+				const playPage = document.getElementById('page-play');
+				if (playPage && !playPage.classList.contains('active')) {
+					playPage.classList.add('active');
+				}
+				// 延迟一帧恢复 Canvas 渲染，确保 DOM 更新先完成
 				requestAnimationFrame(() => {
-					invalidateCache();
-					resize();
+					modalActive = false;
+					requestAnimationFrame(() => {
+						invalidateCache();
+						resize();
+					});
 				});
+			} else {
+				// 非 play 页面，直接恢复 Canvas 渲染
+				modalActive = false;
 			}
 		}
 

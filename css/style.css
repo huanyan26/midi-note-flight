@@ -9,17 +9,25 @@
 			touch-action: none;
 		}
 		
-		#canvas { display: block; background: #fafafa; }
+		#canvas { 
+			display: block; 
+			background: #fafafa;
+			position: fixed;
+			inset: 0;
+			z-index: 0;
+		}
 		
 		.page {
 			position: absolute;
 			inset: 0;
 			display: none;
 			pointer-events: auto;
+			z-index: 1;
 		}
 		
 		.page.active {
 			display: flex;
+			z-index: 10;
 		}
 		
 		.flat-box {
@@ -346,12 +354,6 @@
 			overflow: hidden;
 			display: flex;
 			flex-direction: column;
-		}
-		.page {
-			z-index: 1;
-		}
-		.page.active {
-			z-index: 10;
 		}
 		#page-settings, #page-info {
 			z-index: 100;

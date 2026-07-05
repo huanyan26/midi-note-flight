@@ -595,6 +595,115 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			document.getElementById('fileInput').click();
 		}
 		
+		async function importFromUrl() {
+			const urlInput = document.getElementById('urlInput');
+			let url = urlInput.value.trim();
+			if (!url) {
+				alert('请输入 MIDI 文件链接');
+				return;
+			}
+			
+			// 自动补全协议
+			if (!/^https?:\/\//i.test(url)) {
+				url = 'https://' + url;
+			}
+			
+			router.navigate('loading');
+			
+			try {
+				await audioEngine.init();
+				await dbStorage.init();
+				
+				// 尝试直接 fetch（处理 CORS）
+				let response;
+				try {
+					response = await fetch(url, { mode: 'cors' });
+				} catch (corsErr) {
+					// CORS 被阻止，尝试 no-cors 模式（无法读取内容，仅作探测）
+					throw new Error('无法访问该链接：服务器可能不允许跨域请求。\n\n💡 提示：请尝试以下方法：\n1. 下载文件后使用"选择本地文件"导入\n2. 使用允许 CORS 的 MIDI 直链');
+				}
+				
+				if (!response.ok) {
+					throw new Error(`下载失败 (HTTP ${response.status}): ${response.statusText}`);
+				}
+				
+				const contentType = response.headers.get('content-type') || '';
+				const contentLength = response.headers.get('content-length');
+				const fileSizeMB = contentLength ? parseInt(contentLength) / (1024 * 1024) : 0;
+				
+				// 拒绝过大的文件（>50MB）
+				if (fileSizeMB > 50) {
+					throw new Error('文件过大（>50MB），请下载后使用本地导入');
+				}
+				
+				// 加载提示更新
+				document.getElementById('loadingVersionInfo').textContent = 
+					`下载中… ${fileSizeMB > 0 ? fileSizeMB.toFixed(1) + 'MB' : ''}`;
+				
+				const buffer = await response.arrayBuffer();
+				
+				// 从 URL 提取文件名
+				let fileName = 'imported';
+				try {
+					const urlPath = new URL(url).pathname;
+					const segments = urlPath.split('/').filter(s => s);
+					if (segments.length > 0) {
+						fileName = decodeURIComponent(segments[segments.length - 1]);
+					}
+				} catch (e) { /* URL 解析失败，使用默认名 */ }
+				
+				await processMidiBuffer(buffer, fileName, fileSizeMB);
+				
+			} catch (err) {
+				console.error('URL 导入失败:', err);
+				alert('导入失败: ' + err.message);
+				router.navigate('import');
+			}
+		}
+		
+		// 公共 MIDI 解析流程（本地文件和 URL 共用）
+		async function processMidiBuffer(buffer, fileName, fileSizeMB) {
+			// 更新加载提示
+			document.getElementById('loadingTitle').textContent = '解析 MIDI 数据...';
+			document.getElementById('loadingSubtitle').textContent = 
+				fileSizeMB > 0 ? `文件大小: ${fileSizeMB.toFixed(1)} MB` : '空间索引构建中 · 对象池预热';
+			
+			let parsedMidi;
+			
+			if (fileSizeMB > 0.5 || buffer.byteLength > 512 * 1024) {
+				parsedMidi = await parseMidiInWorker(buffer);
+			} else {
+				parsedMidi = EnhancedMidiParser.parse(buffer);
+			}
+			
+			if (parsedMidi.timeMap && !parsedMidi.timeMap.tickToSeconds) {
+				const timeMap = new TimeMap(parsedMidi.ppq || 480);
+				timeMap.tempos = parsedMidi.timeMap.tempos || [{ tick: 0, tempo: 500000 }];
+				parsedMidi.timeMap = timeMap;
+			}
+			
+			document.getElementById('loadingTitle').textContent = '保存乐曲...';
+			document.getElementById('loadingSubtitle').textContent = '正在写入本地存储';
+			
+			const songId = await addSongToList(
+				fileName.replace(/\.(mid|midi|midi2)$/i, ''),
+				parsedMidi,
+				fileName
+			);
+			currentSongId = songId;
+			
+			if (midiData && midiData !== parsedMidi) {
+				midiData = null;
+			}
+			midiData = parsedMidi;
+			prepareNotes();
+			updateTrackList();
+			
+			setTimeout(() => {
+				router.navigate('play', { id: songId });
+			}, 500);
+		}
+		
 		async function handleFileSelect(event) {
 			const file = event.target.files[0];
 			if (!file) return;
@@ -606,43 +715,9 @@ const SONG_LIST_KEY = 'note_flight_songs';
 				await dbStorage.init();
 				
 				const buffer = await file.arrayBuffer();
-				
-				// 使用 Web Worker 异步解析（大文件不阻塞主线程）
-				let parsedMidi;
 				const fileSizeMB = buffer.byteLength / (1024 * 1024);
 				
-				if (fileSizeMB > 0.5) {
-					// 大于 0.5MB 的文件使用 Worker 解析
-					parsedMidi = await parseMidiInWorker(buffer);
-				} else {
-					// 小文件直接同步解析（避免 Worker 通信开销）
-					parsedMidi = EnhancedMidiParser.parse(buffer);
-				}
-				
-				if (parsedMidi.timeMap && !parsedMidi.timeMap.tickToSeconds) {
-					const timeMap = new TimeMap(parsedMidi.ppq || 480);
-					timeMap.tempos = parsedMidi.timeMap.tempos || [{ tick: 0, tempo: 500000 }];
-					parsedMidi.timeMap = timeMap;
-				}
-				
-				const songId = await addSongToList(
-					file.name.replace(/\.(mid|midi|midi2)$/i, ''), 
-					parsedMidi, 
-					file.name
-				);
-				currentSongId = songId;
-				
-				// 释放旧 MIDI 数据，避免大文件数据重复占用内存
-				if (midiData && midiData !== parsedMidi) {
-					midiData = null;
-				}
-				midiData = parsedMidi;
-				prepareNotes();
-				updateTrackList();
-				
-				setTimeout(() => {
-					router.navigate('play', { id: songId });
-				}, 500);
+				await processMidiBuffer(buffer, file.name, fileSizeMB);
 				
 			} catch (err) {
 				console.error(err);

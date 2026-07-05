@@ -53,9 +53,19 @@
 					</div>
 				</div>
 				<h2 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">导入 MIDI 文件</h2>
-				<p class="text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm">选择 MIDI 文件开始生成音符动画<br>支持 .mid .midi .midi2 格式</p>
-				<button onclick="selectFile()" class="flat-btn blue py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg w-full mb-3">选择文件</button>
+				<p class="text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm">选择本地 MIDI 文件或输入在线链接<br>支持 .mid .midi .midi2 格式</p>
+				<button onclick="selectFile()" class="flat-btn blue py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg w-full mb-3">📁 选择本地文件</button>
 				<input type="file" id="fileInput" accept=".mid,.midi,.midi2" onchange="handleFileSelect(event)">
+				<div class="flex items-center gap-2 my-4">
+					<div class="flex-1 h-0.5 bg-gray-300"></div>
+					<span class="text-xs text-gray-400 font-bold">或</span>
+					<div class="flex-1 h-0.5 bg-gray-300"></div>
+				</div>
+				<div class="flex gap-2 mb-3">
+					<input type="text" id="urlInput" placeholder="输入 MIDI 文件链接…" class="flat-url-input flex-1 text-sm">
+					<button onclick="importFromUrl()" class="flat-btn yellow py-2 px-4 text-sm whitespace-nowrap">🌐 导入</button>
+				</div>
+				<p class="text-xs text-gray-400 mb-3" id="urlHint">支持直链 MIDI 文件（需服务器允许跨域访问）</p>
 				<button onclick="router.back()" class="flat-btn gray py-2 sm:py-3 px-6 sm:px-8 text-sm sm:text-base w-full">← 返回</button>
 			</div>
 		</div>
@@ -64,8 +74,8 @@
 		<div id="page-loading" class="page items-center justify-center bg-gray-200/95 p-4">
 			<div class="flat-box p-6 sm:p-8 text-center page-transition">
 				<div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
-				<h3 class="text-base sm:text-lg font-bold">计算飞行轨迹...</h3>
-				<p class="text-xs sm:text-sm text-gray-600 mt-2">空间索引构建中 · 对象池预热</p>
+				<h3 class="text-base sm:text-lg font-bold" id="loadingTitle">计算飞行轨迹...</h3>
+				<p class="text-xs sm:text-sm text-gray-600 mt-2" id="loadingSubtitle">空间索引构建中 · 对象池预热</p>
 				<div class="mt-4 text-xs text-gray-400" id="loadingVersionInfo"></div>
 			</div>
 		</div>

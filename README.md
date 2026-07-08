@@ -1,6 +1,6 @@
 # 🎵 NOTE FLIGHT — MIDI 音符动画生成器
 
-![Visitor Count](https://count.getloli.com/get/@huanyan26.midi-note-flight?theme=moebooru)
+
 
 > 将 MIDI 文件转换为视觉化的音符飞行动画，每个音符从画布中央飞向四周边界，在命中瞬间触发音频演奏。
 
@@ -8,11 +8,15 @@
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Pages](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://huanyan26.github.io/midi-note-flight/)
 
-## 🌐 在线体验
+## 访问量统计
+
+![Visitor Count](https://count.getloli.com/get/@huanyan26.midi-note-flight?theme=moebooru)
+
+## Demo
 
 **[https://huanyan26.github.io/midi-note-flight/](https://huanyan26.github.io/midi-note-flight/)**
 
-## ✨ 核心特性
+## 核心特性
 
 | 特性 | 说明 |
 |------|------|
@@ -31,7 +35,7 @@
 | **IndexedDB 存储** | 大文件本地持久化，支持多首乐曲管理 |
 | **PWA 离线支持** | 可安装到桌面，离线使用 |
 
-## 🛠️ 技术栈
+## 技术栈
 
 | 技术 | 用途 |
 |------|------|
@@ -44,7 +48,7 @@
 | **QuadTree** | 自定义空间分区索引 |
 | **Proxy Store** | ES6 Proxy 响应式状态管理 |
 
-## 📦 快速开始
+## 快速开始
 
 ```bash
 git clone https://github.com/huanyan26/midi-note-flight.git
@@ -53,19 +57,19 @@ python3 -m http.server 8080
 # 访问 http://localhost:8080
 ```
 
-## 🎮 操作指南
+## 操作指南
 
 | 操作 | 说明 |
 |------|------|
-| 📁 选择本地文件 | 从设备导入 MIDI 文件 |
-| 🌐 输入链接导入 | 输入在线 MIDI 直链导入 |
+| 选择本地文件 | 从设备导入 MIDI 文件 |
+| 输入链接导入 | 输入在线 MIDI 直链导入 |
 | <kbd>Space</kbd> | 播放/暂停 |
 | <kbd>R</kbd> | 重置 |
 | <kbd>Esc</kbd> | 返回乐曲列表 |
 
 > **URL 导入提示**：需要服务器允许跨域访问（CORS）。如遇跨域限制，建议下载后使用本地导入。
 
-## 📁 项目结构
+## 项目结构
 
 ```
 midi-note-flight/
@@ -93,14 +97,14 @@ midi-note-flight/
 └── README.md
 ```
 
-## 📝 更新日志
+## 更新日志
 
 ### v1.3.2 (2026-07-05)
-- 🌐 新增 URL 远程导入 MIDI 文件功能
-- 🛡️ 对象池添加硬上限 + WeakSet 防止内存溢出
-- 🎵 切换歌曲时自动释放音频合成器
-- 🔄 离屏 Canvas 显式释放加速 GC
-- 📄 许可证更新为 GPL-3.0
+- 新增 URL 远程导入 MIDI 文件功能
+-  对象池添加硬上限 + WeakSet 防止内存溢出
+-  切换歌曲时自动释放音频合成器
+-  离屏 Canvas 显式释放加速 GC
+-  许可证更新为 GPL-3.0
 
 ### v1.3.2 (2026-07-04)
 - Web Worker 异步 MIDI 解析
@@ -120,10 +124,6 @@ midi-note-flight/
 - IndexedDB 大文件存储
 - PWA 离线支持
 
-## 👤 作者
-
-**huanyan26** — [huanyan26@qq.com](mailto:huanyan26@qq.com)
-
-## 📄 许可证
+## 许可证
 
 [GNU General Public License v3.0](LICENSE) — 自由使用、修改和分发，衍生作品须以相同许可证开源。

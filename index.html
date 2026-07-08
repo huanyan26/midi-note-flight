@@ -10,7 +10,7 @@
 	<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-	<div class="offline-banner" id="offlineBanner">⚠️ 离线模式 - 部分功能可能受限</div>
+	<div class="offline-banner" id="offlineBanner">离线模式 - 部分功能可能受限</div>
 	<canvas id="canvas"></canvas>
 	
 	<!-- 性能监控面板 (调试用) -->
@@ -54,7 +54,7 @@
 				</div>
 				<h2 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">导入 MIDI 文件</h2>
 				<p class="text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm">选择本地 MIDI 文件或输入在线链接<br>支持 .mid .midi .midi2 格式</p>
-				<button onclick="selectFile()" class="flat-btn blue py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg w-full mb-3">📁 选择本地文件</button>
+				<button onclick="selectFile()" class="flat-btn blue py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg w-full mb-3">选择本地文件</button>
 				<input type="file" id="fileInput" accept=".mid,.midi,.midi2" onchange="handleFileSelect(event)">
 				<div class="flex items-center gap-2 my-4">
 					<div class="flex-1 h-0.5 bg-gray-300"></div>
@@ -63,7 +63,7 @@
 				</div>
 				<div class="flex gap-2 mb-3">
 					<input type="text" id="urlInput" placeholder="输入 MIDI 文件链接…" class="flat-url-input flex-1 text-sm">
-					<button onclick="importFromUrl()" class="flat-btn yellow py-2 px-4 text-sm whitespace-nowrap">🌐 导入</button>
+					<button onclick="importFromUrl()" class="flat-btn yellow py-2 px-4 text-sm whitespace-nowrap">导入</button>
 				</div>
 				<p class="text-xs text-gray-400 mb-3" id="urlHint">支持直链与 MIDI 分享页（自动提取内嵌链接）。跨域受限时可在「设置 → 网络」配置代理</p>
 				<button onclick="router.back()" class="flat-btn gray py-2 sm:py-3 px-6 sm:px-8 text-sm sm:text-base w-full">← 返回</button>
@@ -293,15 +293,16 @@
 				</div>
 				<h2 class="text-xl font-bold mb-1">NOTE FLIGHT</h2>
 				<div id="infoVersionBadge" class="mb-4"></div>
-				<p class="text-sm text-gray-600 mb-6">MIDI 音符动画生成器<br>将 MIDI 文件转换为视觉化的音符飞行动画</p>
+				<div style="text-align: center; padding: 20px;">
+                  <p>访问次数：</p>
+                  <img src="https://count.getloli.com/get/@huanyan26.midi-note-flight?theme=moebooru" 
+             alt="visitor count">
+                </div>
+				<div id="infoVersionBadge" class="mb-4"></div>
 				<div class="space-y-3 mb-6">
 					<a href="https://github.com/huanyan26/midi-note-flight" target="_blank" class="flat-btn blue py-3 px-6 text-base w-full flex items-center justify-center gap-2 no-underline" style="display: flex;">
 						<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
 						GitHub 仓库
-					</a>
-					<a href="https://huanyan26.github.io/midi-note-flight/" target="_blank" class="flat-btn yellow py-3 px-6 text-base w-full flex items-center justify-center gap-2 no-underline" style="display: flex;">
-						<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-						在线演示
 					</a>
 					<a href="mailto:huanyan26@qq.com" class="flat-btn gray py-3 px-6 text-base w-full flex items-center justify-center gap-2 no-underline" style="display: flex;">
 						<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>

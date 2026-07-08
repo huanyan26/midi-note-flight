@@ -1,5 +1,7 @@
 # 🎵 NOTE FLIGHT — MIDI 音符动画生成器
 
+![Visitor Count](https://count.getloli.com/get/@huanyan26.midi-note-flight?theme=moebooru)
+
 > 将 MIDI 文件转换为视觉化的音符飞行动画，每个音符从画布中央飞向四周边界，在命中瞬间触发音频演奏。
 
 [![Version](https://img.shields.io/badge/version-1.3.2-green)](https://github.com/huanyan26/midi-note-flight)

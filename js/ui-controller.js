@@ -367,6 +367,9 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			document.getElementById('showTrackToggle').checked = settings.showTrack;
 			document.getElementById('showProgressToggle').checked = settings.showProgress;
 			
+			const corsProxyInput = document.getElementById('corsProxyInput');
+			if (corsProxyInput) corsProxyInput.value = settings.corsProxy || '';
+			
 			// 同步实际 DOM 显示/隐藏状态（仅设置checkbox不触发onchange）
 			document.getElementById('statsContainer').classList.toggle('hidden', !settings.showStatus);
 			document.getElementById('trackPanel').classList.toggle('hidden', !settings.showTrack);
@@ -393,6 +396,11 @@ const SONG_LIST_KEY = 'note_flight_songs';
 		
 		function toggleObjectPool(enabled) {
 			appStore.setState(state => { state.settings.objectPool = enabled; });
+		}
+		
+		function updateCorsProxy(value) {
+			const proxy = value.trim();
+			appStore.setState(state => { state.settings.corsProxy = proxy; });
 		}
 		
 		function togglePerfPanel(enabled) {
@@ -427,7 +435,8 @@ const SONG_LIST_KEY = 'note_flight_songs';
 					showPerfPanel: false,
 					showStatus: false,
 					showTrack: false,
-					showProgress: true
+					showProgress: true,
+					corsProxy: ''
 				};
 			});
 			syncSettingsUI();
@@ -614,51 +623,147 @@ const SONG_LIST_KEY = 'note_flight_songs';
 				await audioEngine.init();
 				await dbStorage.init();
 				
-				// 尝试直接 fetch（处理 CORS）
-				let response;
-				try {
-					response = await fetch(url, { mode: 'cors' });
-				} catch (corsErr) {
-					// CORS 被阻止，尝试 no-cors 模式（无法读取内容，仅作探测）
-					throw new Error('无法访问该链接：服务器可能不允许跨域请求。\n\n💡 提示：请尝试以下方法：\n1. 下载文件后使用"选择本地文件"导入\n2. 使用允许 CORS 的 MIDI 直链');
-				}
+				document.getElementById('loadingTitle').textContent = '解析链接来源...';
+				document.getElementById('loadingSubtitle').textContent = '正在获取 MIDI 来源（支持直链与分享页）';
 				
-				if (!response.ok) {
-					throw new Error(`下载失败 (HTTP ${response.status}): ${response.statusText}`);
-				}
-				
-				const contentType = response.headers.get('content-type') || '';
-				const contentLength = response.headers.get('content-length');
-				const fileSizeMB = contentLength ? parseInt(contentLength) / (1024 * 1024) : 0;
+				// 智能解析：支持直链 + HTML 分享页提取
+				const result = await fetchMidiWithFallback(url);
 				
 				// 拒绝过大的文件（>50MB）
+				const fileSizeMB = result.buffer.byteLength / (1024 * 1024);
 				if (fileSizeMB > 50) {
 					throw new Error('文件过大（>50MB），请下载后使用本地导入');
 				}
 				
-				// 加载提示更新
-				document.getElementById('loadingVersionInfo').textContent = 
-					`下载中… ${fileSizeMB > 0 ? fileSizeMB.toFixed(1) + 'MB' : ''}`;
+				const fileName = extractFileName(result.finalUrl);
 				
-				const buffer = await response.arrayBuffer();
-				
-				// 从 URL 提取文件名
-				let fileName = 'imported';
-				try {
-					const urlPath = new URL(url).pathname;
-					const segments = urlPath.split('/').filter(s => s);
-					if (segments.length > 0) {
-						fileName = decodeURIComponent(segments[segments.length - 1]);
-					}
-				} catch (e) { /* URL 解析失败，使用默认名 */ }
-				
-				await processMidiBuffer(buffer, fileName, fileSizeMB);
+				await processMidiBuffer(result.buffer, fileName, fileSizeMB);
 				
 			} catch (err) {
 				console.error('URL 导入失败:', err);
 				alert('导入失败: ' + err.message);
 				router.navigate('import');
 			}
+		}
+		
+		// 智能解析 URL：支持直链与 HTML 分享页中的 MIDI 链接
+		// 返回 { buffer: ArrayBuffer, finalUrl: string }
+		async function fetchMidiWithFallback(url, depth = 0) {
+			if (depth > 3) {
+				throw new Error('链接层级过深或存在循环引用，无法解析');
+			}
+			
+			const requestUrl = applyCorsProxy(url);
+			
+			let response;
+			try {
+				response = await fetch(requestUrl, { mode: 'cors' });
+			} catch (corsErr) {
+				throw new Error(
+					'无法访问该链接（跨域限制 CORS 或网络错误）。\n\n' +
+					'💡 解决方案：\n' +
+					'1. 在「设置 → 网络」中配置 CORS 代理\n' +
+					'2. 下载文件后使用「选择本地文件」导入'
+				);
+			}
+			
+			if (!response.ok) {
+				throw new Error(`下载失败 (HTTP ${response.status}): ${response.statusText}`);
+			}
+			
+			const contentType = (response.headers.get('content-type') || '').toLowerCase();
+			
+			// HTML 分享页 → 提取内嵌的 MIDI 链接并递归获取
+			if (isHtmlContentType(contentType) || /\.(html?|php|aspx?|jsp)$/i.test(url)) {
+				const html = await response.text();
+				const midiUrl = extractMidiUrlFromHtml(html, url);
+				if (!midiUrl) {
+					throw new Error('该网页中未找到可用的 MIDI 文件链接');
+				}
+				document.getElementById('loadingSubtitle').textContent = '已从分享页提取 MIDI 链接，正在获取...';
+				return await fetchMidiWithFallback(midiUrl, depth + 1);
+			}
+			
+			// 直接作为二进制文件读取（直链场景）
+			const buffer = await response.arrayBuffer();
+			
+			// 校验 MIDI 魔术字节，过滤掉伪装成文件的网页
+			if (!verifyMidiMagic(buffer)) {
+				const head = new TextDecoder('utf-8', { fatal: false }).decode(buffer.slice(0, 200));
+				if (/^\s*<!DOCTYPE|<html/i.test(head)) {
+					throw new Error('该链接返回的是网页而非 MIDI 文件，请尝试分享页的直接链接');
+				}
+			}
+			
+			return { buffer, finalUrl: url };
+		}
+		
+		// 应用 CORS 代理前缀
+		// 支持 {url} 占位符，否则默认拼接到末尾并对目标 URL 编码
+		function applyCorsProxy(url) {
+			const proxy = appStore.getState().settings.corsProxy;
+			if (!proxy || !proxy.trim()) return url;
+			const p = proxy.trim();
+			if (p.includes('{url}')) {
+				return p.replace('{url}', encodeURIComponent(url));
+			}
+			return p.replace(/\/?$/, '/') + encodeURIComponent(url);
+		}
+		
+		// 判断是否为 HTML 内容类型
+		function isHtmlContentType(contentType) {
+			return /text\/html|application\/xhtml\+xml/i.test(contentType);
+		}
+		
+		// 校验 MIDI 文件魔术字节 "MThd"
+		function verifyMidiMagic(buffer) {
+			if (!buffer || buffer.byteLength < 4) return false;
+			const bytes = new Uint8Array(buffer, 0, 4);
+			return bytes[0] === 0x4D && bytes[1] === 0x54 && bytes[2] === 0x68 && bytes[3] === 0x64;
+		}
+		
+		// 从 HTML 中提取第一个 MIDI 链接
+		function extractMidiUrlFromHtml(html, baseUrl) {
+			// 1. 优先匹配明确的 .mid/.midi/.kar 链接
+			const explicitRegex = /(?:href|src|data-src)\s*=\s*["']([^"']+\.(?:mid|midi|midi2|kar))["']/gi;
+			let match = explicitRegex.exec(html);
+			if (match) return resolveUrl(match[1], baseUrl);
+			
+			// 2. 其次匹配包含 midi/score/download 关键词的链接（排除静态资源）
+			const keywordRegex = /(?:href|src|data-src)\s*=\s*["']([^"']+)["']/gi;
+			const candidates = [];
+			while ((match = keywordRegex.exec(html)) !== null) {
+				const link = match[1];
+				if (/midi|sheet|score|download|play/i.test(link) &&
+					!/\.(css|js|png|jpg|jpeg|gif|svg|ico|webp|woff2?)$/i.test(link)) {
+					candidates.push(link);
+				}
+			}
+			if (candidates.length > 0) return resolveUrl(candidates[0], baseUrl);
+			
+			return null;
+		}
+		
+		// 将相对 URL 解析为绝对 URL
+		function resolveUrl(relativeUrl, baseUrl) {
+			try {
+				return new URL(relativeUrl, baseUrl).href;
+			} catch (e) {
+				return relativeUrl;
+			}
+		}
+		
+		// 从最终 URL 提取文件名
+		function extractFileName(url) {
+			try {
+				const urlPath = new URL(url).pathname;
+				const segments = urlPath.split('/').filter(s => s);
+				if (segments.length > 0) {
+					const last = decodeURIComponent(segments[segments.length - 1]);
+					if (last) return last;
+				}
+			} catch (e) { /* URL 解析失败，使用默认名 */ }
+			return 'imported';
 		}
 		
 		// 公共 MIDI 解析流程（本地文件和 URL 共用）

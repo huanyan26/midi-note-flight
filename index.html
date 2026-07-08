@@ -65,7 +65,7 @@
 					<input type="text" id="urlInput" placeholder="输入 MIDI 文件链接…" class="flat-url-input flex-1 text-sm">
 					<button onclick="importFromUrl()" class="flat-btn yellow py-2 px-4 text-sm whitespace-nowrap">🌐 导入</button>
 				</div>
-				<p class="text-xs text-gray-400 mb-3" id="urlHint">支持直链 MIDI 文件（需服务器允许跨域访问）</p>
+				<p class="text-xs text-gray-400 mb-3" id="urlHint">支持直链与 MIDI 分享页（自动提取内嵌链接）。跨域受限时可在「设置 → 网络」配置代理</p>
 				<button onclick="router.back()" class="flat-btn gray py-2 sm:py-3 px-6 sm:px-8 text-sm sm:text-base w-full">← 返回</button>
 			</div>
 		</div>
@@ -148,6 +148,15 @@
 						<div class="flex items-center justify-between p-2 bg-gray-100 border-2 border-black">
 							<span class="text-sm font-bold">显示性能面板</span>
 							<input type="checkbox" id="perfPanelToggle" class="flat-toggle" onchange="togglePerfPanel(this.checked)">
+						</div>
+					</div>
+
+					<div class="space-y-3 pt-2 border-t-2 border-black">
+						<h3 class="font-bold text-sm uppercase">网络</h3>
+						<div class="p-2 bg-gray-100 border-2 border-black space-y-1">
+							<label class="text-sm font-bold">CORS 代理</label>
+							<input type="text" id="corsProxyInput" placeholder="https://corsproxy.io/?url={url}" class="flat-url-input w-full text-xs" onchange="updateCorsProxy(this.value)">
+							<p class="text-xs text-gray-500">用于读取跨域/非直链资源。使用 <span class="font-mono">{url}</span> 占位符指代目标链接。</p>
 						</div>
 					</div>
 

@@ -53,6 +53,7 @@ class Store {
 				showPerfPanel: false,
 				showStatus: false,
 				showTrack: false,
-				showProgress: true
+				showProgress: true,
+				corsProxy: ''
 			}
 		});

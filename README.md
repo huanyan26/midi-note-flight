@@ -5,33 +5,10 @@
 [![Version](https://img.shields.io/badge/version-1.3.2-green)](https://github.com/huanyan26/midi-note-flight)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Pages](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://huanyan26.github.io/midi-note-flight/)
-[![Android](https://img.shields.io/badge/Android-APK-green)](https://github.com/huanyan26/midi-note-flight/tree/android)
 
 ## 🌐 在线体验
 
 **[https://huanyan26.github.io/midi-note-flight/](https://huanyan26.github.io/midi-note-flight/)**
-
-## 📱 Android 版本
-
-`android` 分支提供完整的 Android APK 构建支持，基于 WebView + 本地资源加载：
-
-```bash
-git checkout android
-cd android
-./build.sh          # 自动复制 web 文件并构建 APK
-# 或手动：
-./gradlew assembleRelease
-```
-
-APK 输出：`android/app/build/outputs/apk/release/app-release.apk`
-
-| 特性 | 说明 |
-|------|------|
-| WebView 渲染 | 硬件加速 Canvas，流畅 60fps |
-| 本地资源加载 | 所有 HTML/CSS/JS 内置于 APK，离线可用 |
-| 沉浸式全屏 | 自动隐藏状态栏和导航栏 |
-| MIDI 文件关联 | 支持从文件管理器直接打开 .mid 文件 |
-| 返回键适配 | 智能处理 WebView 内路由返回 |
 
 ## ✨ 核心特性
 
@@ -108,18 +85,6 @@ midi-note-flight/
 │   ├── renderer.js         # Canvas 渲染 + 渲染循环
 │   ├── ui-controller.js    # 路由/设置/乐曲列表/URL导入
 │   └── app.js              # 入口 + PWA
-├── android/                # Android APK 工程 (android 分支)
-│   ├── app/
-│   │   ├── build.gradle
-│   │   ├── proguard-rules.pro
-│   │   └── src/main/
-│   │       ├── AndroidManifest.xml
-│   │       ├── java/com/noteflight/app/MainActivity.java
-│   │       └── res/
-│   ├── build.gradle
-│   ├── settings.gradle
-│   ├── gradle.properties
-│   └── build.sh
 ├── .github/workflows/
 │   └── deploy.yml          # GitHub Pages 自动部署
 ├── LICENSE                 # GPL-3.0
@@ -129,7 +94,6 @@ midi-note-flight/
 ## 📝 更新日志
 
 ### v1.3.2 (2026-07-05)
-- 📱 新增 Android APK 版本（WebView 本地加载，沉浸式全屏）
 - 🌐 新增 URL 远程导入 MIDI 文件功能
 - 🛡️ 对象池添加硬上限 + WeakSet 防止内存溢出
 - 🎵 切换歌曲时自动释放音频合成器

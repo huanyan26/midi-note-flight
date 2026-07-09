@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>讨论 · NOTE FLIGHT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, "PingFang SC", "Microsoft YaHei", sans-serif; background: #e5e7eb; }
+    .topbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px; border-bottom: 3px solid #000; background: #fff;
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border: 2px solid #000; background: #fff;
+      font-weight: 700; cursor: pointer; text-decoration: none; color: #000;
+    }
+    .back-btn:hover { background: #000; color: #fff; }
+    .topbar h1 { font-size: 20px; font-weight: 800; margin: 0; }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px; }
+    .hint { color: #4b5563; font-size: 14px; margin-bottom: 16px; }
+    .giscus { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <!-- 出口：返回主应用首页 -->
+  <div class="topbar">
+    <a class="back-btn" href="index.html">← 返回</a>
+    <h1>讨论区</h1>
+  </div>
+
+  <div class="wrap">
+    <p class="hint">对 NOTE FLIGHT（MIDI 音符动画生成器）的建议、反馈与疑问都欢迎在这里交流。需登录 GitHub 后方可发表评论。</p>
+
+    <!-- giscus 评论区 -->
+    <div class="giscus"></div>
+  </div>
+
+  <!-- giscus 脚本（category-id 由构建/提交时补全） -->
+  <script src="https://giscus.app/client.js"
+    data-repo="huanyan26/midi-note-flight"
+    data-repo-id="R_kgDOTNU9VA"
+    data-category="General"
+    data-category-id="DIC_kwDOTNU9VM4DAeWu"
+    data-mapping="pathname"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="bottom"
+    data-theme="light"
+    data-lang="zh-CN"
+    data-loading="lazy"
+    crossorigin="anonymous"
+    async>
+  </script>
+</body>
+</html>

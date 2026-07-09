@@ -78,10 +78,11 @@ const SONG_LIST_KEY = 'note_flight_songs';
 				closeModal('settings');
 				closeModal('info');
 				
-				// 历史记录：仅对非模态页面做记录
-				if (this.currentPage !== page && this.currentPage !== 'settings' && this.currentPage !== 'info') {
-					this.history.push(this.currentPage);
-				}
+			// 历史记录：仅对非模态页面做记录
+			// 目标页或当前页为 settings/info 模态框时不记录，避免底层页（如 play）污染 history
+			if (this.currentPage !== page && page !== 'settings' && page !== 'info' && this.currentPage !== 'settings' && this.currentPage !== 'info') {
+				this.history.push(this.currentPage);
+			}
 				
 				// 切换页面 active 状态
 				this.pages.forEach(p => {
@@ -202,6 +203,15 @@ const SONG_LIST_KEY = 'note_flight_songs';
 				// 非 play 页面，直接恢复 Canvas 渲染
 				modalActive = false;
 			}
+		}
+
+		// 关闭模态框并返回到打开它时的底层页面（默认 home）。
+		// 不能用 router.back()：history 中可能残留 play 等页面，
+		// 会导致从 settings/info 返回时错误跳转到 play。
+		function closeModalAndReturn(modalId) {
+			const returnPage = modalReturnPage || 'home';
+			closeModal(modalId);
+			router.navigate(returnPage);
 		}
 
 
@@ -986,7 +996,8 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			} else if (e.code === 'KeyR') {
 				if (router.currentPage === 'play') resetSim();
 			} else if (e.code === 'Escape') {
-				if (router.currentPage === 'settings' || router.currentPage === 'info') router.back();
+				if (router.currentPage === 'settings') closeModalAndReturn('settings');
+				else if (router.currentPage === 'info') closeModalAndReturn('info');
 				else if (router.currentPage === 'play') router.navigate('songs');
 			}
 		});

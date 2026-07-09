@@ -111,7 +111,7 @@
 			<div class="modal-box p-4 sm:p-6 max-w-md w-full">
 				<div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-black">
 					<h2 class="text-xl sm:text-2xl font-bold">设置</h2>
-					<button onclick="closeModal('settings')" class="flat-btn w-8 h-8 flex items-center justify-center p-0 text-lg">×</button>
+					<button onclick="closeModalAndReturn('settings')" class="flat-btn w-8 h-8 flex items-center justify-center p-0 text-lg">×</button>
 				</div>
 				<div class="settings-scroll overflow-y-auto flex-1 pr-2 space-y-4">
 					<div class="space-y-2">
@@ -197,7 +197,7 @@
 					</div>
 				</div>
 				<div class="mt-4 pt-3 border-t-2 border-black text-center">
-					<button onclick="closeModal('settings')" class="flat-btn gray py-2 px-6 text-sm">关闭</button>
+					<button onclick="closeModalAndReturn('settings')" class="flat-btn gray py-2 px-6 text-sm">关闭</button>
 					<p class="text-xs text-gray-500 mt-2" id="settingsFooterVersion"></p>
 				</div>
 			</div>
@@ -311,7 +311,7 @@
 				</div>
 				<div class="text-xs text-gray-400" id="infoBuildDate"></div>
 				<div class="mt-4">
-					<button onclick="closeModal('info')" class="flat-btn gray py-2 px-6 text-sm">关闭</button>
+					<button onclick="closeModalAndReturn('info')" class="flat-btn gray py-2 px-6 text-sm">关闭</button>
 				</div>
 			</div>
 		</div>

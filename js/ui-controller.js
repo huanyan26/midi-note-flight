@@ -887,6 +887,12 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			allNotes.length = 0;
 			allNotes = [];
 			
+			// 切歌时必须重置播放时钟与进度条，否则残留旧曲目时间
+			visualClock.time = 0;
+			visualClock.lastFrameTime = 0;
+			document.getElementById('timeDisplay').textContent = '0.00';
+			nextNoteIndex = 0;
+			
 			if (appStore.getState().settings.objectPool) {
 				trianglePool.releaseAll();
 				particlePool.releaseAll();
@@ -896,7 +902,6 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			
 			activeTriangles = [];
 			activeParticles = [];
-			nextNoteIndex = 0;
 			
 			midiData.tracks.forEach((track, trackId) => {
 				track.notes.forEach(note => {

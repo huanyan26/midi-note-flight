@@ -3,8 +3,7 @@ class ObjectPool {
 				this.createFn = createFn;
 				this.resetFn = resetFn;
 				this.available = [];
-				this.inUse = new WeakSet();
-				this._inUseCount = 0;       // WeakSet 无 size，手动追踪
+				this.inUse = new Set();  // 使用 Set 替代 WeakSet，支持遍历回收
 				this.totalCreated = 0;
 				this.maxSize = maxSize;     // 硬上限，防止无限膨胀
 				
@@ -21,7 +20,6 @@ class ObjectPool {
 				} else {
 					// 检查上限：超过后不再创建，复用即将销毁的对象
 					if (this.totalCreated >= this.maxSize) {
-						// 尝试从 available 获取（可能已被 GC 回收引用但数组还有位置）
 						if (this.available.length > 0) {
 							obj = this.available.pop();
 						} else {
@@ -35,29 +33,32 @@ class ObjectPool {
 				}
 				if (obj) {
 					this.inUse.add(obj);
-					this._inUseCount++;
 				}
 				return obj;
 			}
 
 			release(obj) {
 				if (!obj) return;
-				// WeakSet 无法直接检测成员，用 try-catch 保护
-				this.inUse.delete(obj);
-				if (this._inUseCount > 0) this._inUseCount--;
-				this.resetFn(obj);
-				this.available.push(obj);
+				if (this.inUse.has(obj)) {
+					this.inUse.delete(obj);
+					this.resetFn(obj);
+					this.available.push(obj);
+				}
 			}
 
 			releaseAll() {
-				// 遍历 available 中的对象执行 reset（inUse 用 WeakSet 无需手动清理）
-				this._inUseCount = 0;
+				// 将所有 in-use 对象回收到 available 队列
+				for (const obj of this.inUse) {
+					this.resetFn(obj);
+					this.available.push(obj);
+				}
+				this.inUse.clear();
 			}
 
 			getStats() {
 				return {
 					available: this.available.length,
-					inUse: this._inUseCount,
+					inUse: this.inUse.size,
 					total: this.totalCreated
 				};
 			}

@@ -329,38 +329,7 @@ const colorCache = new Map();
 				drawTimeline();
 			}
 		}
-		
-		function drawBoundaries() {
-			const m = CONFIG.MARGIN;
-			const colors = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#f38181'];
-			const boundaries = ['left', 'right', 'top', 'bottom'];
-			
-			boundaries.forEach((boundary, i) => {
-				ctx.fillStyle = colors[i];
-				ctx.strokeStyle = '#000';
-				ctx.lineWidth = Math.max(2, m / 30);
-				
-				switch(boundary) {
-					case 'left':
-						ctx.fillRect(0, 0, m, canvas.height);
-						ctx.strokeRect(0, 0, m, canvas.height);
-						break;
-					case 'right':
-						ctx.fillRect(canvas.width - m, 0, m, canvas.height);
-						ctx.strokeRect(canvas.width - m, 0, m, canvas.height);
-						break;
-					case 'top':
-						ctx.fillRect(m, 0, canvas.width - 2*m, m);
-						ctx.strokeRect(m, 0, canvas.width - 2*m, m);
-						break;
-					case 'bottom':
-						ctx.fillRect(m, canvas.height - m, canvas.width - 2*m, m);
-						ctx.strokeRect(m, canvas.height - m, canvas.width - 2*m, m);
-						break;
-				}
-			});
-		}
-		
+
 		function drawTimeline() {
 			const maxTime = allNotes.length > 0 
 				? allNotes[allNotes.length - 1].hitTime + 2

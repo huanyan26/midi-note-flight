@@ -33,7 +33,7 @@ const SONG_LIST_KEY = 'note_flight_songs';
 		}
 		
 		async function addSongToList(name, midiData, originalFileName) {
-			const songId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+			const songId = Date.now().toString(36) + Math.random().toString(36).slice(2);
 			
 			let totalNotes = 0;
 			let trackCount = midiData.tracks.length;
@@ -449,6 +449,8 @@ const SONG_LIST_KEY = 'note_flight_songs';
 					corsProxy: ''
 				};
 			});
+			// 持久化重置后的默认设置
+			saveSettings(appStore.getState().settings);
 			syncSettingsUI();
 		}
 		
@@ -938,6 +940,9 @@ const SONG_LIST_KEY = 'note_flight_songs';
 			midiData.tracks.forEach((track, trackId) => {
 				const boundaries = ['左', '右', '上', '下'];
 				const boundary = boundaries[track.id % 4];
+				
+				// 防护：空音轨跳过统计计算，避免除以零
+				if (!track.notes || track.notes.length === 0) return;
 				
 				const avgVelocity = track.notes.reduce((sum, n) => sum + n.velocity, 0) / track.notes.length;
 				const minNote = Math.min(...track.notes.map(n => n.note));
